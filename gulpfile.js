@@ -4,17 +4,38 @@ var gulp = require('gulp'),
     browserify = require('gulp-browserify'),
     compass = require('gulp-compass'),
     connect = require('gulp-connect'),
+    gulpif = require('gulp-if'),
+    uglify = require('gulp-uglify'),
     concat = require('gulp-concat');
 
-var coffeeSources = ['components/coffee/*.coffee'];
-var jsSources = ['components/scripts/rclick.js',
+var env,
+    coffeeSources,
+    jsSources,
+    sassSources,
+    htmlSources,
+    jsonSources,
+    outputDir,
+    sassStyle;
+
+env = process.env.NODE_ENV || 'production';
+
+if (env === 'development') {
+  outputDir = 'builds/development/';
+  sassStyle = 'expanded';
+} else {
+  outputDir = 'builds/production/';
+  sassStyle = 'compressed';
+}
+
+coffeeSources = ['components/coffee/*.coffee'];
+jsSources = ['components/scripts/rclick.js',
               'components/scripts/pixgrid.js',
               'components/scripts/tagline.js',
               'components/scripts/template.js'
 ];
-var sassSources = ['components/sass/style.scss'];
-var htmlSources = ['builds/development/*.html'];
-var jsonSources = ['builds/development/js/*.json'];
+sassSources = ['components/sass/style.scss'];
+htmlSources = [outputDir + '*.html'];
+jsonSources = [outputDir + '/js/*.json'];
 
 gulp.task('coffee', function() {
   gulp.src(coffeeSources)
@@ -27,7 +48,8 @@ gulp.task('js', function(){
   gulp.src(jsSources)
     .pipe(concat('script.js'))
     .pipe(browserify())
-    .pipe(gulp.dest('builds/development/js'))
+    .pipe(gulpif(env === 'production', uglify()))
+    .pipe(gulp.dest(outputDir + '/js'))
     .pipe(connect.reload())
 });
 
@@ -35,11 +57,11 @@ gulp.task('compass', function(){
   gulp.src(sassSources)
     .pipe(compass({
       sass: 'components/sass',
-      image: 'builds/development/images',
-      style: 'expanded'
+      image: outputDir + '/images',
+      style: sassStyle
     }))
     .on('error', gutil.log)
-    .pipe(gulp.dest('builds/development/css'))
+    .pipe(gulp.dest(outputDir + '/css'))
     .pipe(connect.reload())
 });
 
@@ -53,7 +75,7 @@ gulp.task('watch', function() {
 
 gulp.task('connect', function() {
   connect.server({
-    root : 'builds/development/',
+    root : outputDir,
     livereload: true
   });
 });
