@@ -1,3 +1,3 @@
 # Workflows
 
-Gulp workflow
+Gulp Workflow
